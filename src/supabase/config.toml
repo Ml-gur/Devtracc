@@ -1,0 +1,67 @@
+# Supabase Configuration for DevTrack Africa
+# CLIENT-SIDE ONLY - ABSOLUTELY NO EDGE FUNCTIONS
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "auth", "realtime", "storage"]
+extra_search_path = ["public"]
+
+[db]
+port = 54322
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+port = 54326
+
+[storage]
+enabled = true
+port = 54325
+
+# CRITICAL: Edge Functions COMPLETELY DISABLED to prevent 403 errors
+[edge_functions]
+enabled = false
+port = 54327
+# Explicitly disable ALL Edge Function features
+import_verification = false
+verify_jwt = false
+# Prevent any edge function compilation or deployment
+compile = false
+deploy = false
+
+# Disable services that might cause deployment issues
+[analytics]
+enabled = false
+
+[inbucket]
+enabled = false
+
+[db.pooler]
+enabled = false
+
+[db.migrations]
+enabled = true
+
+# Project settings - ABSOLUTELY NO Edge Functions
+[project]
+include_edge_functions = false
+deploy_edge_functions = false
+build_edge_functions = false
+
+# Experimental settings to prevent ANY Edge Function detection
+[experimental]
+edge_functions = false
+functions = false
+
+# Additional safety settings
+[functions]
+enabled = false
+
+# Explicitly disable any function-related features
+[deployment]
+include_functions = false
+deploy_functions = false

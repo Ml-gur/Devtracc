@@ -1,0 +1,54 @@
+# CRITICAL: Completely ignore all Edge Functions to prevent 403 deployment errors
+# This prevents ANY edge function deployment attempts
+
+# Ignore all function files completely
+functions/
+functions/**
+functions/**/*
+functions/**/*.tsx
+functions/**/*.ts
+functions/**/*.js
+functions/**/index.*
+functions/**/deno.json
+functions/**/import_map.json
+
+# Specifically ignore server directory
+functions/server/
+functions/server/*
+functions/server/**
+functions/server/index.tsx
+functions/server/kv_store.tsx
+
+# Ignore any make-server references
+**/make-server
+**/make-server/*
+**/make-server/**
+
+# Ignore all TypeScript/JavaScript function files globally
+**/*.tsx
+**/*.ts
+**/*.js
+
+# Ignore deployment and build files
+.env
+.env.*
+.temp
+.branches
+*.log
+node_modules/
+dist/
+build/
+
+# Only allow essential configuration and documentation
+!config.toml
+!.gitignore
+!.supabaseignore
+!functions/README.md
+!functions/REMOVED.md
+!functions/server/REMOVED.md
+
+# Explicitly ignore any remaining edge function artifacts
+**/edge_functions/
+**/edge_functions/**
+edge_functions/
+edge_functions/**

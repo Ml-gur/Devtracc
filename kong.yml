@@ -1,0 +1,32 @@
+_format_version: "2.1"
+
+services:
+  - name: api
+    url: http://postgrest:3000
+    routes:
+      - name: api-route
+        paths:
+          - /rest/v1/
+    plugins:
+      - name: cors
+
+  - name: auth
+    url: http://gotrue:9999
+    routes:
+      - name: auth-route
+        paths:
+          - /auth/v1/
+
+  - name: storage
+    url: http://storage:5000
+    routes:
+      - name: storage-route
+        paths:
+          - /storage/v1/
+
+  - name: realtime
+    url: http://realtime:4000/socket
+    routes:
+      - name: realtime-route
+        paths:
+          - /realtime/v1/

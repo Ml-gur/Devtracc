@@ -1,0 +1,18 @@
+# Supabase
+.branches
+.temp
+.env
+.env.*
+
+# Edge Functions (removed to prevent deployment issues)
+functions/server/
+functions/**/*.ts
+functions/**/*.tsx
+functions/**/*.js
+
+# Logs and temporary files
+*.log
+.DS_Store
+
+# Only keep essential files
+!functions/REMOVED.md
