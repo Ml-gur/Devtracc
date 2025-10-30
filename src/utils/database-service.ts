@@ -169,6 +169,7 @@ export interface PostComment {
 
 export interface DbTask {
   id: string;
+  user_id: string;
   project_id: string;
   title: string;
   description?: string;
@@ -518,13 +519,15 @@ export async function updateUserProfile(userId: string, updates: Partial<UserPro
 }
 
 // Project Management Functions
-export async function createProject(projectData: Omit<LegacyProject, 'id' | 'createdAt' | 'updatedAt'>, userId: string): Promise<{ data: LegacyProject | null; error: any }> {
+export async function createProject(projectData: Omit<LegacyProject, 'id' | 'createdAt' | 'updatedAt'>): Promise<{ data: LegacyProject | null; error: any; isTemporary?: boolean }> {
+  if (!projectData.userId) {
+    return { data: null, error: 'User ID is required to create a project.' };
+  }
   // Always try local storage first as fallback
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const tempProject: LegacyProject = {
     ...projectData,
     id: tempId,
-    userId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
@@ -541,12 +544,12 @@ export async function createProject(projectData: Omit<LegacyProject, 'id' | 'cre
 
   if (!isDatabaseAvailable()) {
     console.log('📱 Database not available, using local storage only');
-    return { data: tempProject, error: null };
+    return { data: tempProject, error: null, isTemporary: true };
   }
 
   return await withDatabaseCheck(
     async () => {
-      const dbProjectData = mapProjectToDbProject(projectData, userId);
+      const dbProjectData = mapProjectToDbProject(projectData);
       
       const result = await dbHelpers.query('projects', async (table) => {
         const { data, error } = await table
@@ -572,9 +575,9 @@ export async function createProject(projectData: Omit<LegacyProject, 'id' | 'cre
         }
       }
       
-      return { data: tempProject, error: result.error };
+      return { data: tempProject, error: result.error, isTemporary: true };
     },
-    { data: tempProject, error: null },
+    { data: tempProject, error: null, isTemporary: true },
     3000
   );
 }
@@ -792,6 +795,7 @@ function mapDbTaskToTask(dbTask: DbTask): Task {
 
   return {
     id: dbTask.id,
+    userId: dbTask.user_id,
     projectId: dbTask.project_id,
     title: dbTask.title,
     description: dbTask.description,
@@ -817,6 +821,7 @@ function mapTaskToDbTask(task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>): an
   const priority = validPriorities.includes(task.priority) ? task.priority : 'medium';
 
   const dbTask: any = {
+    user_id: task.userId,
     project_id: task.projectId,
     title: task.title,
     description: task.description,
@@ -906,11 +911,15 @@ export async function getProjectTasks(projectId: string): Promise<{ data: Task[]
 }
 
 export async function createTask(taskData: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>, userId?: string): Promise<{ data: Task | null; error: any }> {
+  if (!userId) {
+    return { data: null, error: 'User ID is required to create a task.' };
+  }
   // Always try local storage first as fallback
   const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   const tempTask: Task = {
     ...taskData,
     id: tempId,
+    userId: userId,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };

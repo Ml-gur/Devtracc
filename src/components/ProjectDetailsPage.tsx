@@ -27,19 +27,15 @@ import CollaborationManager from './CollaborationManager';
 import FileUploadManager from './FileUploadManager';
 import CollaborativeShareModal from './CollaborativeShareModal';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { getProjectTasks, createTask, updateTask, deleteTask } from '../utils/database-service';
 
 interface ProjectDetailsPageProps {
   project: LegacyProject;
-  tasks?: Task[];
   onBack: () => void;
   onUpdate?: (updatedProject: LegacyProject) => void;
   onDelete?: (projectId: string) => void;
   currentUser?: any;
   onEdit?: () => void;
-  onTaskUpdate?: (taskId: string, updates: Partial<Task>) => Promise<void>;
-  onTaskCreate?: (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  onTaskDelete?: (taskId: string) => Promise<void>;
-  onTaskTimeUpdate?: (taskId: string, minutes: number) => Promise<void>;
 }
 
 // Mock recent activity data
@@ -66,19 +62,53 @@ const MOCK_ACTIVITY = [
 
 export default function ProjectDetailsPage({
   project,
-  tasks = [],
   onBack,
   onUpdate,
   onDelete,
   currentUser,
   onEdit,
-  onTaskUpdate,
-  onTaskCreate,
-  onTaskDelete,
-  onTaskTimeUpdate
 }: ProjectDetailsPageProps) {
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [activeTab, setActiveTab] = useState('overview');
   const [showShareModal, setShowShareModal] = useState(false);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const { data } = await getProjectTasks(project.id);
+      if (data) {
+        setTasks(data);
+      }
+    };
+    fetchTasks();
+  }, [project.id]);
+
+  const handleTaskCreate = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const { data } = await createTask(task, currentUser?.id);
+    if (data) {
+      setTasks([...tasks, data]);
+    }
+  };
+
+  const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
+    const { data } = await updateTask(taskId, updates, project.id);
+    if (data) {
+      setTasks(tasks.map((task) => (task.id === taskId ? data : task)));
+    }
+  };
+
+  const handleTaskDelete = async (taskId: string) => {
+    await deleteTask(taskId, project.id);
+    setTasks(tasks.filter((task) => task.id !== taskId));
+  };
+
+  const handleTaskTimeUpdate = async (taskId: string, minutes: number) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      const newTime = (task.timeSpentMinutes || 0) + minutes;
+      await handleTaskUpdate(taskId, { timeSpentMinutes: newTime });
+    }
+  };
+
 
   // Calculate project progress
   const progress: TaskProgress = {
@@ -475,26 +505,14 @@ export default function ProjectDetailsPage({
 
           {/* Tasks Tab */}
           <TabsContent value="tasks">
-            {onTaskUpdate && onTaskCreate && onTaskDelete && onTaskTimeUpdate ? (
-              <KanbanBoard
-                projectId={project.id}
-                tasks={tasks}
-                onTaskUpdate={onTaskUpdate}
-                onTaskCreate={onTaskCreate}
-                onTaskDelete={onTaskDelete}
-                onTaskTimeUpdate={onTaskTimeUpdate}
-              />
-            ) : (
-              <Card>
-                <CardContent className="text-center py-12">
-                  <Target className="w-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="font-semibold mb-2">Task Management Available</h3>
-                  <p className="text-muted-foreground">
-                    Full task management features are available when viewing from the project management section.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
+            <KanbanBoard
+              projectId={project.id}
+              tasks={tasks}
+              onTaskUpdate={handleTaskUpdate}
+              onTaskCreate={handleTaskCreate}
+              onTaskDelete={handleTaskDelete}
+              onTaskTimeUpdate={handleTaskTimeUpdate}
+            />
           </TabsContent>
 
           {/* Collaboration Tab */}

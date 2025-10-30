@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
+import { signUpUser, signInUser, getCurrentUser } from '../utils/database-service';
 import supabaseAuth, { UserProfile, AuthResult, ProfileResult } from '../utils/supabase/auth-client';
 
 interface AuthContextType {
@@ -257,13 +258,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
       console.log('🔵 Signing up user:', userData.email);
       
-      const result = await supabaseAuth.signUp(userData);
-      
-      if (!result.success && result.error) {
-        setError(result.error);
+      const { user, error } = await signUpUser({
+        email: userData.email,
+        password: userData.password,
+        full_name: userData.fullName,
+        country: userData.country,
+        phone: userData.phone,
+      });
+
+      if (error) {
+        setError(error.message);
+        return { success: false, error: error.message };
       }
       
-      return result;
+      return { success: true, user: user as User };
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to create account';
       setError(errorMessage);
@@ -276,13 +284,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setError(null);
       console.log('🔵 Signing in user:', email);
       
-      const result = await supabaseAuth.signIn(email, password);
+      const { user, error } = await signInUser(email, password);
       
-      if (!result.success && result.error) {
-        setError(result.error);
+      if (error) {
+        setError(error.message);
+        return { success: false, error: error.message };
       }
       
-      return result;
+      return { success: true, user: user as User };
     } catch (error: any) {
       const errorMessage = error.message || 'Failed to sign in';
       setError(errorMessage);

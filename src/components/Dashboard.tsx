@@ -183,8 +183,7 @@ export default function Dashboard({ user, profile, onLogout, onNavigateToSetup, 
     try {
       // Always allow project creation attempt - handle errors gracefully
       const result = await createProject({
-        title: projectData.title,
-        description: projectData.description,
+        ...projectData,
         userId: user.id,
         techStack: projectData.techStack || [],
         category: projectData.category || 'other',
